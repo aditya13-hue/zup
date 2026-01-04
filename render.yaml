@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: zup-backend
+    env: docker
+    plan: free
+    region: ohio
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PLATFORM_COMMISSION
+        value: 5

@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+dist
+.git
+.env
+Dockerfile
+firebase.json
+.firebaserc
+src
+public
+index.html
+vite.config.js
+eslint.config.js
+package-lock.json

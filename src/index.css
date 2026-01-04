@@ -1,0 +1,306 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;800&display=swap');
+
+:root {
+  --color-bg: #050505;
+  /* Deep Black */
+  --color-surface: #111111;
+  --color-accent: #ccff00;
+  /* Neon Lime */
+  --color-text: #ffffff;
+  --color-text-inv: #000000;
+  --color-light: #f5f5f0;
+  /* Cream/Off-White */
+
+  --font-main: 'Inter', sans-serif;
+
+  --ease-soft: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-elastic: cubic-bezier(0.5, 1.75, 0.75, 1);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-main);
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  line-height: 1.4;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Typography */
+.hero-text {
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  /* clamp is handy, but the hero section needs more specific control on mobile */
+  font-size: clamp(3rem, 8vw, 8rem);
+  line-height: 0.9;
+}
+
+.label-text {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  font-weight: 700;
+}
+
+/* Buttons */
+.btn {
+  background: var(--color-accent);
+  color: black;
+  border: none;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.4s var(--ease-soft);
+}
+
+.btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 30px rgba(204, 255, 0, 0.5);
+}
+
+.btn-outline {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-outline:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* Global Animation Utilities */
+.page-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+@keyframes slideUpFade {
+  0% {
+    transform: translateY(60px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+
+  50% {
+    top: 100%;
+  }
+
+  100% {
+    top: 0%;
+  }
+}
+
+.animate-reveal {
+  opacity: 0;
+  animation: slideUpFade 1.2s var(--ease-soft) forwards;
+}
+
+/* Scroll Trigger Class */
+.scroll-section {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: all 1s var(--ease-soft);
+}
+
+.scroll-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 3D Text Reveal */
+.text-reveal {
+  opacity: 0;
+  transform: perspective(1000px) translateZ(-100px) translateY(50px);
+  transition: all 1.2s var(--ease-elastic);
+  display: inline-block;
+}
+
+.text-reveal.visible {
+  opacity: 1;
+  transform: perspective(1000px) translateZ(0) translateY(0);
+}
+
+/* Input Styles */
+input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 16px 0;
+  color: white;
+  width: 100%;
+  font-family: var(--font-main);
+  font-size: 1.1rem;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+input:focus {
+  border-color: var(--color-accent);
+}
+
+/* --- RESPONSIVE UTILITIES --- */
+
+/* Split Layout (Login/Signup) */
+.split-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.auth-padding {
+  padding: 60px;
+}
+
+/* Section Padding (Landing Page) */
+.section-pad {
+  padding: 120px 40px;
+}
+
+.hero-pad {
+  padding: 0 40px;
+}
+
+.nav-pad {
+  padding: 24px 40px;
+}
+
+/* Grids */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1.2fr) minmax(300px, 0.8fr);
+  align-items: center;
+  gap: 60px;
+}
+
+.mission-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) 1fr;
+  gap: 80px;
+}
+
+/* Phone Scale */
+.phone-mockup-wrapper {
+  transform: scale(0.9);
+}
+
+
+/* --- MOBILE OVERRIDES --- */
+@media (max-width: 900px) {
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-padding {
+    padding: 40px 20px;
+    /* Reduced padding on mobile */
+  }
+
+  .nav-pad {
+    padding: 20px;
+  }
+
+  /* Landing Page Mobile */
+  .section-pad {
+    padding: 80px 20px;
+  }
+
+  .hero-pad {
+    padding: 120px 20px 60px 20px;
+    /* More top padding for nav */
+    display: block;
+    /* Stack hero */
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
+    text-align: center;
+  }
+
+  /* Center buttons in hero on mobile */
+  .hero-actions {
+    justify-content: center;
+  }
+
+  /* Phone */
+  .phone-mockup-wrapper {
+    transform: scale(0.75);
+    /* Smaller phone on mobile */
+    margin-top: -40px;
+  }
+
+  /* Mission Section */
+  .mission-grid {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+
+  .hero-text {
+    font-size: 3.5rem;
+    /* Force readable size on mobile */
+  }
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}

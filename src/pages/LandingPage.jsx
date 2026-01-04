@@ -51,45 +51,44 @@ const LandingPage = () => {
         <div style={{ background: 'var(--color-bg)', color: 'white', overflowX: 'hidden' }}>
 
             {/* Sticky Nav */}
-            <nav style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, mixBlendMode: 'difference' }}>
+            <nav className="nav-pad" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, mixBlendMode: 'difference' }}>
                 <div onClick={() => scrollToSection('home')} style={{ display: 'flex', alignItems: 'center', gap: '12px', fontWeight: '800', fontSize: '1.5rem', letterSpacing: '-0.05em', cursor: 'pointer' }}>
                     <Logo size={28} color="white" />
-                    <span>ZUP.</span>
+                    <span>ZUPP.</span>
                 </div>
                 <div style={{ display: 'flex', gap: '30px', alignItems: 'center' }}>
-                    <button onClick={() => navigate('/login')} className="btn-outline" style={{ padding: '12px 24px', fontSize: '0.9rem', borderRadius: '50px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <button onClick={() => navigate('/login')} className="btn-outline" style={{ padding: '10px 20px', fontSize: '0.9rem', borderRadius: '50px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)' }}>
                         Sign In
                     </button>
                 </div>
             </nav>
 
             {/* --- SECTION 1: HERO --- */}
-            <section id="home" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', padding: '0 40px' }}>
-                <div className="page-container" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1.2fr) minmax(300px, 0.8fr)', alignItems: 'center', gap: '60px' }}>
-
+            <section id="home" className="hero-pad" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center' }}>
+                <div className="page-container hero-grid">
                     <div style={{ zIndex: 10 }}>
-                        <div className="text-reveal label-text" style={{ marginBottom: '20px', color: 'var(--color-accent)' }}>FAST. SIMPLE. SECURE.</div>
-                        <h1 className="hero-text" style={{ fontSize: 'clamp(4rem, 7vw, 8rem)', lineHeight: '0.9', marginBottom: '40px' }}>
+                        <div className="text-reveal label-text mobile-text-center" style={{ marginBottom: '20px', color: 'var(--color-accent)' }}>FAST. SIMPLE. SECURE.</div>
+                        <h1 className="hero-text" style={{ marginBottom: '40px' }}>
                             <span className="text-reveal" style={{ transitionDelay: '0.1s' }}>RETAIL</span><br />
                             <span className="text-reveal" style={{ transitionDelay: '0.2s' }}>AT THE SPEED</span><br />
                             <span className="text-reveal" style={{ transitionDelay: '0.3s', color: 'var(--color-accent)' }}>OF LIFE.</span>
                         </h1>
-                        <p className="scroll-section" style={{ maxWidth: '500px', fontSize: '1.5rem', color: '#fff', marginBottom: '40px', lineHeight: '1.4', fontStyle: 'italic' }}>
+                        <p className="scroll-section mobile-text-center" style={{ maxWidth: '500px', fontSize: '1.5rem', color: '#fff', marginBottom: '40px', lineHeight: '1.4', fontStyle: 'italic', marginInline: 'auto' }}>
                             "Your Checkout is in Your Pocket."
                         </p>
-                        <div className="scroll-section" style={{ display: 'flex', gap: '20px' }}>
-                            <button onClick={() => navigate('/signup')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '18px 36px', fontSize: '1.1rem', borderRadius: '4px' }}>
+                        <div className="scroll-section" style={{ display: 'flex', gap: '20px', justifyContent: 'inherit' }}>
+                            <button onClick={() => navigate('/signup')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '18px 36px', fontSize: '1.1rem', borderRadius: '4px', width: '100%', justifyContent: 'center' }}>
                                 Get Started <ArrowRight size={22} />
                             </button>
                         </div>
                     </div>
 
                     {/* 3D Interactive Phone Zone */}
-                    <div className="scroll-section" style={{ height: '650px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
+                    <div className="scroll-section phone-mockup-wrapper" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                         {/* PHONE MOCKUP CONTAINER */}
                         <div ref={phoneRef} style={{
-                            width: '320px',
-                            height: '640px',
+                            width: '280px',
+                            height: '560px',
                             background: '#000',
                             borderRadius: '50px',
                             position: 'relative',
@@ -147,11 +146,11 @@ const LandingPage = () => {
             </section>
 
             {/* --- SECTION 2: CORE FEATURES --- */}
-            <section id="technology" style={{ minHeight: '100vh', background: 'var(--color-light)', color: 'black', padding: '120px 40px' }}>
+            <section id="technology" className="section-pad" style={{ minHeight: '100vh', background: 'var(--color-light)', color: 'black' }}>
                 <div className="page-container">
-                    <div className="scroll-section" style={{ marginBottom: '80px' }}>
+                    <div className="scroll-section mobile-text-center" style={{ marginBottom: '80px' }}>
                         <div className="label-text" style={{ color: 'black', marginBottom: '10px' }}>Intelligent Infrastructure</div>
-                        <h2 style={{ fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: '800', lineHeight: '1', letterSpacing: '-0.02em' }}>
+                        <h2 style={{ fontSize: 'clamp(2.5rem, 6vw, 5rem)', fontWeight: '800', lineHeight: '1', letterSpacing: '-0.02em' }}>
                             CHECKOUT<br />REDEFINED.
                         </h2>
                     </div>
@@ -177,9 +176,9 @@ const LandingPage = () => {
             </section>
 
             {/* --- SECTION 3: MISSION --- */}
-            <section id="mission" style={{ minHeight: '80vh', padding: '120px 40px', display: 'flex', alignItems: 'center' }}>
+            <section id="mission" className="section-pad" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center' }}>
                 <div className="page-container">
-                    <div className="scroll-section" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+                    <div className="scroll-section grid-stack">
                         <div>
                             <div className="label-text" style={{ color: 'var(--color-accent)', marginBottom: '20px' }}>Our Mission</div>
                             <h2 style={{ fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: '800', lineHeight: '1.1', marginBottom: '40px' }}>
@@ -187,7 +186,7 @@ const LandingPage = () => {
                             </h2>
                             <p style={{ fontSize: '1.2rem', lineHeight: '1.8', color: '#aaa', marginBottom: '40px' }}>
                                 To eliminate the single biggest pain point of modern retail—waiting in line.
-                                <span style={{ color: 'white', fontWeight: 'bold' }}> Zup</span> empowers shoppers to reclaim their time while giving local marts the technology to compete with global giants.
+                                <span style={{ color: 'white', fontWeight: 'bold' }}> Zupp</span> empowers shoppers to reclaim their time while giving local marts the technology to compete with global giants.
                             </p>
                             <button onClick={() => navigate('/manifesto')} className="btn-outline" style={{ padding: '16px 32px' }}>Read Manifesto</button>
                         </div>
@@ -205,9 +204,9 @@ const LandingPage = () => {
 
 
             {/* --- SECTION 4: FOOTER --- */}
-            <section style={{ background: '#0a0a0a', padding: '120px 40px', borderTop: '1px solid #222' }}>
+            <footer style={{ background: '#0a0a0a', borderTop: '1px solid #222' }} className="section-pad">
                 <div className="page-container">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '80px' }}>
+                    <div className="footer-grid">
                         <div>
                             <h2 className="scroll-section" style={{ fontSize: '4rem', fontWeight: '800', lineHeight: 1, marginBottom: '40px' }}>
                                 READY TO<br />
@@ -234,9 +233,9 @@ const LandingPage = () => {
                             </div>
                         </div>
                     </div>
-                    <div style={{ marginTop: '150px', fontSize: '12rem', fontWeight: '800', lineHeight: 0.8, color: '#151515', userSelect: 'none', wordBreak: 'break-all' }}>ZUP.</div>
+                    <div style={{ marginTop: '100px', fontSize: 'clamp(4rem, 15vw, 12rem)', fontWeight: '800', lineHeight: 0.8, color: '#151515', userSelect: 'none', wordBreak: 'break-all' }}>ZUPP.</div>
                 </div>
-            </section>
+            </footer>
             <style>{`
                 .hover-text:hover { color: var(--color-accent) !important; padding-left: 10px; }
             `}</style>

@@ -212,6 +212,27 @@ input:focus {
   gap: 80px;
 }
 
+/* Responsive Utilities */
+.grid-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+}
+
+.auth-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 100vh;
+}
+
+.mobile-hide {
+  display: block;
+}
+
+.mobile-only {
+  display: none;
+}
+
 /* Phone Scale */
 .phone-mockup-wrapper {
   transform: scale(0.9);
@@ -220,63 +241,63 @@ input:focus {
 
 /* --- MOBILE OVERRIDES --- */
 @media (max-width: 900px) {
-  .split-layout {
-    grid-template-columns: 1fr;
+
+  .grid-stack,
+  .auth-container,
+  .footer-grid,
+  .mission-grid,
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 40px !important;
   }
 
   .auth-padding {
-    padding: 40px 20px;
-    /* Reduced padding on mobile */
+    padding: 60px 24px !important;
   }
 
-  .nav-pad {
-    padding: 20px;
+  .mobile-hide {
+    display: none !important;
   }
 
-  /* Landing Page Mobile */
+  .mobile-only {
+    display: block !important;
+  }
+
   .section-pad {
-    padding: 80px 20px;
+    padding: 80px 24px !important;
   }
 
   .hero-pad {
-    padding: 120px 20px 60px 20px;
-    /* More top padding for nav */
-    display: block;
-    /* Stack hero */
-  }
-
-  .hero-grid {
-    grid-template-columns: 1fr;
-    gap: 60px;
-    text-align: center;
-  }
-
-  /* Center buttons in hero on mobile */
-  .hero-actions {
-    justify-content: center;
-  }
-
-  /* Phone */
-  .phone-mockup-wrapper {
-    transform: scale(0.75);
-    /* Smaller phone on mobile */
-    margin-top: -40px;
-  }
-
-  /* Mission Section */
-  .mission-grid {
-    grid-template-columns: 1fr;
-    gap: 40px;
-  }
-
-  .footer-grid {
-    grid-template-columns: 1fr;
-    gap: 60px;
+    padding: 100px 24px 60px 24px !important;
   }
 
   .hero-text {
-    font-size: 3.5rem;
-    /* Force readable size on mobile */
+    font-size: 3.5rem !important;
+    text-align: center;
+  }
+
+  .mobile-text-center {
+    text-align: center !important;
+  }
+
+  .phone-mockup-wrapper {
+    transform: scale(0.65) !important;
+    margin-top: -60px;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-text {
+    font-size: 2.8rem !important;
+  }
+
+  .auth-padding {
+    padding: 40px 20px !important;
+  }
+
+  h1,
+  h2 {
+    letter-spacing: -0.02em !important;
   }
 }
 

@@ -44,13 +44,12 @@ const LoginPage = () => {
     };
 
     return (
-        <div className="split-layout">
-
-            {/* Left Section - Light Mode Editorial */}
-            <div className="auth-padding" style={{ background: 'var(--color-light)', color: 'black', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="auth-container">
+            {/* Left Section - Light Mode Editorial (Hidden on mobile) */}
+            <div className="auth-padding mobile-hide" style={{ background: 'var(--color-light)', color: 'black', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <Logo size={24} color="black" />
-                    <span style={{ fontWeight: '800' }}>ZUP.</span>
+                    <span style={{ fontWeight: '800' }}>ZUPP.</span>
                 </div>
 
                 <div>
@@ -83,12 +82,28 @@ const LoginPage = () => {
                 }}>
                     <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '3rem', letterSpacing: '-0.02em' }}>MEMBER LOGIN</h2>
 
+                    {error && (
+                        <div style={{
+                            background: 'rgba(239, 68, 68, 0.1)',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            color: '#f87171',
+                            padding: '12px',
+                            borderRadius: '8px',
+                            marginBottom: '2rem',
+                            fontSize: '0.85rem'
+                        }}>
+                            {error}
+                        </div>
+                    )}
+
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }} autoComplete="off">
                         <div>
                             <label style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.8rem', display: 'block', letterSpacing: '0.1em', fontWeight: 'bold' }}>EMAIL ADDRESS</label>
                             <input
                                 type="email"
                                 required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 style={{
                                     fontSize: '1.2rem',
                                     padding: '15px',
@@ -107,6 +122,8 @@ const LoginPage = () => {
                             <input
                                 type="password"
                                 required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 style={{
                                     fontSize: '1.2rem',
                                     padding: '15px',
@@ -200,7 +217,7 @@ const LoginPage = () => {
 
                     <div style={{ marginTop: '3rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem' }}>
                         <p style={{ color: '#888', fontSize: '0.9rem' }}>
-                            New to Zup? <span onClick={() => navigate('/signup')} style={{ color: 'white', cursor: 'pointer', fontWeight: 'bold', marginLeft: '5px' }}>Create an Account</span>
+                            New to Zupp? <span onClick={() => navigate('/signup')} style={{ color: 'white', cursor: 'pointer', fontWeight: 'bold', marginLeft: '5px' }}>Create an Account</span>
                         </p>
                     </div>
                 </div>
@@ -210,6 +227,11 @@ const LoginPage = () => {
                 @keyframes spin { 100% { transform: rotate(360deg); } }
                 input::placeholder { color: #333; }
             `}</style>
+
+            {/* Version Stamp for Cache Verification */}
+            <div style={{ position: 'fixed', bottom: '10px', right: '10px', fontSize: '10px', color: '#333', pointerEvents: 'none' }}>
+                Build: v2.1.0-stable
+            </div>
 
         </div>
     );

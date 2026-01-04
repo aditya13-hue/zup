@@ -69,7 +69,7 @@ router.post('/recommend', async (req, res) => {
         const productContext = allProducts.map(p => `${p.name} (₹${p.price})`).join(', ');
 
         const prompt = `
-            You are an AI Retail Assistant for Zup, a smart checkout system. 
+            You are an AI Retail Assistant for Zupp, a smart checkout system. 
             Current User Cart: [${cartString}]
             Available Products in Store: [${productContext}]
 

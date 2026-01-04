@@ -3,18 +3,34 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2, ArrowLeft, Mail } from 'lucide-react';
 import Logo from '../components/Logo';
 
+import { useAuth } from '../contexts/AuthContext';
+
 const ForgotPasswordPage = () => {
     const navigate = useNavigate();
+    const { resetPassword } = useAuth();
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
+    const [email, setEmail] = useState('');
+    const [error, setError] = useState('');
 
-    const handleReset = (e) => {
+    const handleReset = async (e) => {
         e.preventDefault();
+        setError('');
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+
+        try {
+            await resetPassword(email);
             setSent(true);
-        }, 1500);
+        } catch (err) {
+            console.error('Password reset error:', err);
+            // Firebase error codes are helpful for debugging
+            const errorMsg = err.code === 'auth/user-not-found'
+                ? 'This email is not registered. Please sign up first.'
+                : (err.message || 'Failed to send reset email.');
+            setError(`${errorMsg} (Error: ${err.code || 'unknown'})`);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -24,7 +40,7 @@ const ForgotPasswordPage = () => {
             <div style={{ background: 'var(--color-light)', padding: '60px', color: 'black', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <Logo size={24} color="black" />
-                    <span style={{ fontWeight: '800' }}>ZUP.</span>
+                    <span style={{ fontWeight: '800' }}>ZUPP.</span>
                 </div>
 
                 <div>
@@ -57,26 +73,45 @@ const ForgotPasswordPage = () => {
                     {!sent ? (
                         <>
                             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '1rem', letterSpacing: '-0.02em' }}>RESET PASSWORD</h2>
-                            <p style={{ color: '#888', marginBottom: '3rem' }}>Enter the email address associated with your Zup ID.</p>
+                            <p style={{ color: '#888', marginBottom: '2rem' }}>Enter the email address associated with your Zupp ID.</p>
+
+                            {error && (
+                                <div style={{
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.2)',
+                                    color: '#f87171',
+                                    padding: '12px',
+                                    borderRadius: '8px',
+                                    marginBottom: '2rem',
+                                    fontSize: '0.85rem'
+                                }}>
+                                    {error}
+                                </div>
+                            )}
 
                             <form onSubmit={handleReset} style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }} autoComplete="off">
 
-                                <div>
+                                <div style={{ position: 'relative' }}>
                                     <label style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.8rem', display: 'block', letterSpacing: '0.1em', fontWeight: 'bold' }}>EMAIL ADDRESS</label>
                                     <input
                                         type="email"
                                         required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
                                         style={{
                                             fontSize: '1.2rem',
                                             padding: '15px',
+                                            paddingLeft: '50px',
                                             background: 'rgba(0,0,0,0.3)',
                                             border: '1px solid #333',
                                             borderRadius: '8px',
                                             color: 'white',
-                                            width: '100%'
+                                            width: '100%',
+                                            position: 'relative'
                                         }}
                                         autoComplete="off"
                                     />
+                                    <Mail size={20} style={{ position: 'absolute', left: '15px', bottom: '15px', color: '#666' }} />
                                 </div>
 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
@@ -124,7 +159,9 @@ const ForgotPasswordPage = () => {
                             </div>
                             <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '20px' }}>CHECK YOUR MAIL</h2>
                             <p style={{ color: '#ccc', marginBottom: '40px', lineHeight: '1.6' }}>
-                                We've sent a password reset link to your email address. It should arrive instantly.
+                                We've sent a password reset link to: <br />
+                                <b style={{ color: 'var(--color-accent)' }}>{email}</b> <br /><br />
+                                It should arrive instantly.
                             </p>
                             <button
                                 onClick={() => navigate('/login')}
@@ -133,6 +170,9 @@ const ForgotPasswordPage = () => {
                             >
                                 Return to Login
                             </button>
+                            <p style={{ marginTop: '20px', fontSize: '0.8rem', color: '#666' }}>
+                                Don't see it? Check your <b>Spam/Junk</b> folder.
+                            </p>
                         </div>
                     )}
                 </div>
@@ -141,6 +181,11 @@ const ForgotPasswordPage = () => {
                 .spin { animation: spin 1s linear infinite; }
                 @keyframes spin { 100% { transform: rotate(360deg); } }
             `}</style>
+
+            {/* Version Stamp for Cache Verification */}
+            <div style={{ position: 'fixed', bottom: '10px', right: '10px', fontSize: '10px', color: '#333', pointerEvents: 'none' }}>
+                Build: v2.1.0-stable
+            </div>
         </div>
     );
 };

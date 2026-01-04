@@ -72,7 +72,7 @@ const VerificationPage = () => {
                 <div className="glass animate-fade-in" style={{ padding: '40px', borderRadius: '24px', textAlign: 'center', borderColor: '#ef4444', borderWidth: '2px' }}>
                     <XCircle size={64} style={{ color: '#ef4444', margin: '0 auto 1rem auto' }} />
                     <h2 style={{ fontSize: '2rem', color: '#ef4444', marginBottom: '1rem' }}>Invalid QR Code</h2>
-                    <p>The scanned code is not a valid Zup receipt.</p>
+                    <p>The scanned code is not a valid Zupp receipt.</p>
                     <button className="btn btn-outline" style={{ marginTop: '2rem' }} onClick={() => window.location.reload()}>
                         Try Again
                     </button>

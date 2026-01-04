@@ -5,7 +5,8 @@ import {
     signInWithPopup,
     GoogleAuthProvider,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../firebase';
 
@@ -40,6 +41,11 @@ export const AuthProvider = ({ children }) => {
         return signOut(auth);
     };
 
+    // Reset Password
+    const resetPassword = (email) => {
+        return sendPasswordResetEmail(auth, email);
+    };
+
     // Listen to auth state changes
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -55,7 +61,8 @@ export const AuthProvider = ({ children }) => {
         signup,
         login,
         loginWithGoogle,
-        logout
+        logout,
+        resetPassword
     };
 
     return (

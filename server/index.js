@@ -5,6 +5,7 @@ import productsRouter from './routes/products.js';
 import paymentRouter from './routes/payment.js';
 import storesRouter from './routes/stores.js';
 import offersRouter from './routes/offers.js';
+import partnerRouter from './routes/partner.js';
 import 'dotenv/config';
 
 const app = express();
@@ -19,10 +20,11 @@ app.use('/api/products', productsRouter);
 app.use('/api/payment', paymentRouter);
 app.use('/api/stores', storesRouter);
 app.use('/api/offers', offersRouter);
+app.use('/api/partner', partnerRouter);
 
 // Health Check
 app.get('/', (req, res) => {
-    res.send('Zup Backend is running!');
+    res.send('Zupp Backend is running!');
 });
 
 app.listen(PORT, () => {

@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React, { useEffect, useState, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 import { useNavigate } from 'react-router-dom';
 import {
     ShoppingCart,
@@ -13,27 +13,35 @@ import {
     Plus,
     Minus,
     Trash2,
-    MapPin
+    MapPin,
+    ShieldCheck,
+    ArrowRight
 } from 'lucide-react';
 import { useGeolocation, calculateDistance } from '../hooks/useGeolocation';
+import { useAuth } from '../contexts/AuthContext';
+
 const ScannerPage = () => {
     const navigate = useNavigate();
+    const { currentUser, logout } = useAuth();
     const [cart, setCart] = useState([]);
     const [activeTab, setActiveTab] = useState('home'); // 'home', 'cart'
     const [isScanning, setIsScanning] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
     const [lastScanned, setLastScanned] = useState(null);
     const [aiOffers, setAiOffers] = useState([]);
-    const scannerRef = useRef(null);
+    const [showStorePicker, setShowStorePicker] = useState(false);
+    const [showProfileMenu, setShowProfileMenu] = useState(false);
+    const [manualStore, setManualStore] = useState(null);
+    const html5QrCodeRef = useRef(null);
 
     // Load/Save Cart
     useEffect(() => {
-        const savedCart = localStorage.getItem('zup_cart');
+        const savedCart = localStorage.getItem('zupp_cart');
         if (savedCart) setCart(JSON.parse(savedCart));
     }, []);
 
     useEffect(() => {
-        localStorage.setItem('zup_cart', JSON.stringify(cart));
+        localStorage.setItem('zupp_cart', JSON.stringify(cart));
     }, [cart]);
 
     // Fetch Products from Backend
@@ -42,21 +50,30 @@ const ScannerPage = () => {
         fetch(`${import.meta.env.VITE_API_URL}/api/products`)
             .then(res => res.json())
             .then(data => setProducts(data))
-            .catch(err => {
-                console.error("Failed to fetch products", err);
-            });
+            .catch(err => console.error("Failed to fetch products", err));
     }, []);
 
     // Location & Stores
     const { location, error: locationError, loading: locationLoading } = useGeolocation();
     const [stores, setStores] = useState([]);
+    const [storesError, setStoresError] = useState(false);
     const [nearestStore, setNearestStore] = useState(null);
 
-    useEffect(() => {
+    const activeStore = manualStore || nearestStore;
+
+    const fetchStores = () => {
+        setStoresError(false);
         fetch(`${import.meta.env.VITE_API_URL}/api/stores`)
             .then(res => res.json())
             .then(data => setStores(data))
-            .catch(err => console.error("Failed to fetch stores", err));
+            .catch(err => {
+                console.error("Failed to fetch stores", err);
+                setStoresError(true);
+            });
+    };
+
+    useEffect(() => {
+        fetchStores();
     }, []);
 
     // Find nearest store when location changes
@@ -66,12 +83,7 @@ const ScannerPage = () => {
             let minDistance = Infinity;
 
             stores.forEach(store => {
-                const distance = calculateDistance(
-                    location.lat,
-                    location.lng,
-                    store.lat,
-                    store.lng
-                );
+                const distance = calculateDistance(location.lat, location.lng, store.lat, store.lng);
                 if (distance < minDistance) {
                     minDistance = distance;
                     nearest = { ...store, distance };
@@ -103,32 +115,43 @@ const ScannerPage = () => {
             }
         };
 
-        const timeout = setTimeout(fetchOffers, 1000); // Debounce
+        const timeout = setTimeout(fetchOffers, 1000);
         return () => clearTimeout(timeout);
-    }, [cart, nearestStore]);
+    }, [cart, activeStore]);
 
-    // Scanner Logic
+    // Scanner Logic (Cleaned up for Html5Qrcode)
     useEffect(() => {
-        // If scanning is active, init scanner
-        if (isScanning && permissionGranted && !scannerRef.current) {
-            // Slight delay to ensure DOM is ready
-            setTimeout(() => {
-                const scanner = new Html5QrcodeScanner("reader", {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0
-                }, false);
+        if (isScanning && permissionGranted) {
+            const startScanner = async () => {
+                try {
+                    const html5QrCode = new Html5Qrcode("reader");
+                    html5QrCodeRef.current = html5QrCode;
 
-                scanner.render(onScanSuccess, (err) => { });
-                scannerRef.current = scanner;
-            }, 100);
+                    const config = {
+                        fps: 15,
+                        qrbox: { width: 280, height: 280 },
+                        aspectRatio: 1.0
+                    };
+
+                    await html5QrCode.start(
+                        { facingMode: "environment" },
+                        config,
+                        onScanSuccess
+                    );
+                } catch (err) {
+                    console.error("Scanner start error", err);
+                    setIsScanning(false);
+                }
+            };
+
+            setTimeout(startScanner, 300); // Give DOM a moment
         }
 
-        // Cleanup when stop scanning
         return () => {
-            if (scannerRef.current) {
-                scannerRef.current.clear().catch(err => console.error(err));
-                scannerRef.current = null;
+            if (html5QrCodeRef.current) {
+                html5QrCodeRef.current.stop().then(() => {
+                    html5QrCodeRef.current = null;
+                }).catch(err => console.error("Scanner stop error", err));
             }
         };
     }, [isScanning, permissionGranted]);
@@ -138,8 +161,7 @@ const ScannerPage = () => {
         if (product) {
             addToCart(product);
             setLastScanned(product);
-            setIsScanning(false); // Close scanner on success
-            // Optional: Vibrate phone
+            setIsScanning(false);
             if (navigator.vibrate) navigator.vibrate(200);
         }
     };
@@ -169,34 +191,217 @@ const ScannerPage = () => {
     const total = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const totalItems = cart.reduce((sum, item) => sum + item.qty, 0);
 
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (err) {
+            console.error("Failed to logout", err);
+        }
+    };
+
+    const getInitials = () => {
+        if (!currentUser?.email) return '??';
+        return currentUser.email.substring(0, 2).toUpperCase();
+    };
+
+    const renderStorePicker = () => (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 110, background: 'rgba(0,0,0,0.95)', backdropFilter: 'blur(15px)', display: 'flex', flexDirection: 'column', padding: '40px 20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: '800', letterSpacing: '-0.02em' }}>CHOOSE YOUR MART</h2>
+                <button onClick={() => setShowStorePicker(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'white', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <X size={20} />
+                </button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', overflowY: 'auto', flex: 1 }}>
+                {stores.length === 0 && !storesError && (
+                    <div style={{ textAlign: 'center', padding: '60px', color: '#666' }}>
+                        <div className="spin" style={{ width: '30px', height: '30px', border: '2px solid #333', borderTopColor: 'var(--color-accent)', borderRadius: '50%', margin: '0 auto 15px' }}></div>
+                        Fetching active marts...
+                    </div>
+                )}
+                {storesError && (
+                    <div style={{ textAlign: 'center', padding: '40px', color: '#ff4444' }}>
+                        <p>Connection lost.</p>
+                        <button onClick={fetchStores} className="btn-outline" style={{ marginTop: '15px', padding: '8px 20px', fontSize: '0.8rem', borderRadius: '50px' }}>Retry Connection</button>
+                    </div>
+                )}
+                {stores
+                    .map(store => {
+                        if (location) {
+                            const dist = calculateDistance(location.lat, location.lng, store.lat, store.lng);
+                            return { ...store, distance: dist };
+                        }
+                        return store;
+                    })
+                    .sort((a, b) => (a.distance || Infinity) - (b.distance || Infinity))
+                    .map(store => (
+                        <div
+                            key={store.id}
+                            onClick={() => {
+                                setManualStore(store);
+                                setShowStorePicker(false);
+                            }}
+                            style={{
+                                background: '#111',
+                                padding: '24px',
+                                borderRadius: '24px',
+                                border: (manualStore?.id === store.id || (!manualStore && nearestStore?.id === store.id)) ? '1.5px solid var(--color-accent)' : '1px solid #222',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: '0.3s'
+                            }}
+                        >
+                            <div>
+                                <div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '4px' }}>{store.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: '#666' }}>{store.address}</div>
+                            </div>
+                            {store.distance && (
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--color-accent)', fontWeight: '800' }}>
+                                        {(store.distance / 1000).toFixed(1)} km
+                                    </div>
+                                    <div style={{ fontSize: '0.6rem', color: '#444', textTransform: 'uppercase' }}>Away</div>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+            </div>
+
+            <button
+                onClick={() => {
+                    setManualStore(null);
+                    setShowStorePicker(false);
+                }}
+                style={{ marginTop: '20px', padding: '20px', background: 'transparent', border: '1px solid #333', borderRadius: '20px', color: '#888', fontWeight: 'bold', fontSize: '0.9rem' }}
+            >
+                AUTO-DETECT NEAREST
+            </button>
+        </div>
+    );
+
     // --- RENDER VIEWS ---
 
-    // 1. Permission Gate
+    // 1. Premium Permission Onboarding
     if (!permissionGranted) {
         return (
-            <div style={{ height: '100vh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px' }}>
-                <div style={{ width: '80px', height: '80px', background: 'var(--color-accent)', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '40px', boxShadow: '0 0 40px rgba(204,255,0,0.3)' }}>
-                    <Camera size={40} color="black" />
+            <div style={{ height: '100vh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', padding: '40px', justifyContent: 'space-between' }}>
+                <div style={{ marginTop: '40px' }}>
+                    <div style={{ width: '60px', height: '60px', background: 'var(--color-accent)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '30px', boxShadow: '0 20px 40px rgba(204,255,0,0.2)' }}>
+                        <ShieldCheck size={32} color="black" />
+                    </div>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', lineHeight: '1', letterSpacing: '-0.04em', marginBottom: '20px' }}>
+                        SECURE<br />SCANNING
+                    </h1>
+                    <p style={{ color: '#888', fontSize: '1.1rem', lineHeight: '1.6', maxWidth: '300px' }}>
+                        To provide a seamless "Scan & Go" experience, Zupp needs access to:
+                    </p>
+
+                    <div style={{ marginTop: '40px', display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <div style={{ color: 'var(--color-accent)' }}><Camera size={24} /></div>
+                            <div>
+                                <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>CAMERA</div>
+                                <div style={{ fontSize: '0.8rem', color: '#555' }}>To scan barcodes instantly</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                            <div style={{ color: 'var(--color-accent)' }}><MapPin size={24} /></div>
+                            <div>
+                                <div style={{ fontWeight: 'bold', fontSize: '0.9rem' }}>LOCATION</div>
+                                <div style={{ fontSize: '0.8rem', color: '#555' }}>To find the closest Mart</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <h1 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '20px' }}>ENABLE CAMERA</h1>
-                <p style={{ color: '#888', marginBottom: '40px' }}>To scan products, Zup needs access to your camera.</p>
-                <button onClick={() => setPermissionGranted(true)} className="btn" style={{ padding: '20px 40px', width: '100%' }}>Allow Access</button>
+
+                <div style={{ marginBottom: '20px' }}>
+                    <button
+                        onClick={() => {
+                            setPermissionGranted(true);
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(() => { }, () => { });
+                            }
+                        }}
+                        className="btn"
+                        style={{ padding: '24px', width: '100%', borderRadius: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                        <span>ALLOW & START</span>
+                        <ArrowRight size={20} />
+                    </button>
+                    <p style={{ textAlign: 'center', color: '#444', fontSize: '0.75rem', marginTop: '20px' }}>
+                        By proceeding, you agree to our Privacy Terms.
+                    </p>
+                </div>
             </div>
         );
     }
 
-    // 2. Main App Interface
+    // 2. Premium Discovery State
+    if (permissionGranted && locationLoading && !manualStore && !nearestStore) {
+        return (
+            <div style={{ height: '100vh', background: 'var(--color-bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+                <div style={{ position: 'relative', width: '120px', height: '120px', marginBottom: '40px' }}>
+                    <div className="spin" style={{ position: 'absolute', inset: 0, border: '4px solid #111', borderTopColor: 'var(--color-accent)', borderRadius: '50%' }}></div>
+                    <div style={{ position: 'absolute', inset: '20px', background: '#0a0a0a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MapPin size={32} color="var(--color-accent)" className="animate-pulse" />
+                    </div>
+                </div>
+
+                <h2 style={{ fontSize: '1.2rem', fontWeight: '800', letterSpacing: '0.1em' }}>SYNCING LOCATION</h2>
+                <p style={{ color: '#666', marginTop: '12px', textAlign: 'center', maxWidth: '250px', fontSize: '0.9rem' }}>
+                    Matching you with the nearest Zupp partner mart...
+                </p>
+
+                <button
+                    onClick={() => setShowStorePicker(true)}
+                    className="btn-outline"
+                    style={{ marginTop: '80px', padding: '12px 24px', borderRadius: '50px', fontSize: '0.8rem', fontWeight: 'bold' }}
+                >
+                    SELECT MANUALLY
+                </button>
+
+                {showStorePicker && renderStorePicker()}
+            </div>
+        );
+    }
+
+    // 3. Main Interface
     return (
         <div style={{ background: '#000', minHeight: '100vh', color: 'white', fontFamily: 'var(--font-main)', paddingBottom: '100px' }}>
 
             {/* --- HEADER --- */}
             <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontWeight: '800', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <div style={{ width: '10px', height: '10px', background: 'var(--color-accent)', borderRadius: '50%' }}></div>
-                    ZUP.
+                <div style={{ fontWeight: '800', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '8px', height: '8px', background: 'var(--color-accent)', borderRadius: '50%' }}></div>
+                    ZUPP.
                 </div>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#222', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>AD</span>
+                <div
+                    onClick={() => setShowProfileMenu(!showProfileMenu)}
+                    style={{ position: 'relative', width: '42px', height: '42px', borderRadius: '14px', background: 'var(--color-accent)', color: 'black', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: '0.3s' }}
+                >
+                    <span style={{ fontSize: '0.85rem', fontWeight: '900' }}>{getInitials()}</span>
+
+                    {/* Profile Dropdown */}
+                    {showProfileMenu && (
+                        <div className="animate-fade-in" style={{ position: 'absolute', top: '55px', right: 0, background: '#111', border: '1px solid #222', borderRadius: '20px', padding: '12px', width: '220px', zIndex: 120, boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
+                            <div style={{ padding: '12px', borderBottom: '1px solid #222', marginBottom: '8px' }}>
+                                <div style={{ fontSize: '0.65rem', color: '#555', textTransform: 'uppercase', fontWeight: '800', letterSpacing: '0.05em' }}>Member</div>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', color: 'white' }}>{currentUser?.email}</div>
+                            </div>
+                            <button
+                                onClick={handleLogout}
+                                style={{ width: '100%', padding: '12px', background: 'none', border: 'none', color: '#ff4444', textAlign: 'left', fontWeight: 'bold', cursor: 'pointer', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem' }}
+                                onMouseOver={(e) => e.target.style.background = 'rgba(255,68,68,0.1)'}
+                                onMouseOut={(e) => e.target.style.background = 'none'}
+                            >
+                                <Trash2 size={16} /> SIGN OUT
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -204,130 +409,101 @@ const ScannerPage = () => {
             {activeTab === 'home' && (
                 <div className="animate-reveal" style={{ padding: '0 20px' }}>
 
-                    {/* Location Status Card */}
-                    {locationLoading ? (
-                        <div style={{ background: '#1a1a1a', borderRadius: '20px', padding: '20px', marginBottom: '20px', textAlign: 'center', color: '#888' }}>
-                            <MapPin size={24} style={{ margin: '0 auto 10px', opacity: 0.5 }} />
-                            <p>Getting your location...</p>
-                        </div>
-                    ) : locationError ? (
-                        <div style={{ background: '#1a1a1a', borderRadius: '20px', padding: '20px', marginBottom: '20px', border: '1px solid #ff4444' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ff4444', marginBottom: '10px' }}>
-                                <MapPin size={20} />
-                                <span style={{ fontWeight: 'bold' }}>Location Required</span>
-                            </div>
-                            <p style={{ color: '#888', fontSize: '0.9rem' }}>Please enable location to find nearby stores</p>
-                        </div>
-                    ) : nearestStore ? (
-                        <div style={{ background: 'linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%)', borderRadius: '20px', padding: '20px', marginBottom: '20px', border: nearestStore.distance < 500 ? '1px solid var(--color-accent)' : '1px solid #333' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-                                <MapPin size={20} color={nearestStore.distance < 500 ? 'var(--color-accent)' : '#888'} />
-                                <span style={{ fontWeight: 'bold', color: nearestStore.distance < 500 ? 'var(--color-accent)' : 'white' }}>
-                                    {nearestStore.distance < 500 ? '✓ IN RANGE' : 'NEARBY'}
+                    {/* Location Card */}
+                    <div
+                        onClick={() => setShowStorePicker(true)}
+                        style={{ background: '#111', borderRadius: '24px', padding: '20px', marginBottom: '24px', border: activeStore?.distance < 500 ? '1px solid var(--color-accent)' : '1px solid #222', cursor: 'pointer' }}
+                    >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <MapPin size={16} color={activeStore?.distance < 500 ? 'var(--color-accent)' : '#555'} />
+                                <span style={{ fontWeight: '800', fontSize: '0.75rem', color: activeStore?.distance < 500 ? 'var(--color-accent)' : '#555', textTransform: 'uppercase' }}>
+                                    {activeStore?.distance < 500 ? '✓ IN RANGE' : 'LOCATION CONNECTED'}
                                 </span>
                             </div>
-                            <div style={{ fontSize: '1.1rem', fontWeight: '600', marginBottom: '5px' }}>{nearestStore.name}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#888' }}>{nearestStore.address}</div>
-                            <div style={{ fontSize: '0.85rem', color: '#888', marginTop: '10px' }}>
-                                {(nearestStore.distance / 1000).toFixed(2)} km away
-                            </div>
+                            <ChevronRight size={16} color="#444" />
                         </div>
-                    ) : null}
+                        <div style={{ fontSize: '1.2rem', fontWeight: '800', marginBottom: '4px' }}>{activeStore?.name || 'Searching...'}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#666' }}>{activeStore?.address}</div>
+                    </div>
 
-                    {/* Status Card */}
-                    <div style={{ background: 'linear-gradient(135deg, #222 0%, #111 100%)', borderRadius: '30px', padding: '30px', marginBottom: '30px', border: '1px solid #333', boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)' }}>
-                        <div style={{ color: '#888', fontSize: '0.9rem', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Current Session</div>
-                        <div style={{ fontSize: '3.5rem', fontWeight: '800', lineHeight: '1', marginBottom: '10px', color: 'var(--color-accent)' }}>
-                            ₹{total.toFixed(2)}
+                    {/* Session Value Card */}
+                    <div style={{ background: 'linear-gradient(135deg, #181818 0%, #050505 100%)', borderRadius: '32px', padding: '32px', marginBottom: '32px', border: '1px solid #222', boxShadow: '0 20px 40px -10px rgba(0,0,0,0.6)' }}>
+                        <div style={{ color: '#444', fontSize: '0.8rem', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: '800' }}>Current Total</div>
+                        <div style={{ fontSize: 'clamp(2.5rem, 12vw, 4rem)', fontWeight: '900', lineHeight: '1', marginBottom: '16px', color: 'white', letterSpacing: '-0.04em' }}>
+                            ₹{total.toFixed(0)}<span style={{ fontSize: '0.4em', color: '#555' }}>.{total.toFixed(2).split('.')[1]}</span>
                         </div>
-                        <div style={{ display: 'flex', gap: '10px', fontSize: '0.9rem', color: '#ccc' }}>
-                            <span>{totalItems} items in cart</span>
+                        <div style={{ display: 'flex', gap: '15px' }}>
+                            <div style={{ background: '#1a1a1a', padding: '6px 14px', borderRadius: '50px', fontSize: '0.75rem', fontWeight: 'bold', border: '1px solid #333' }}>
+                                {totalItems} ITEMS
+                            </div>
                         </div>
                     </div>
 
-                    {/* Quick Notification */}
-                    {lastScanned && (
-                        <div style={{ background: 'rgba(204, 255, 0, 0.1)', border: '1px solid var(--color-accent)', borderRadius: '16px', padding: '20px', marginBottom: '30px', display: 'flex', alignItems: 'center', gap: '15px' }}>
-                            <div style={{ background: 'var(--color-accent)', padding: '10px', borderRadius: '10px' }}>
-                                <Zap size={20} color="black" />
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--color-accent)' }}>JUST ADDED</div>
-                                <div style={{ fontWeight: '600' }}>{lastScanned.name}</div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Offers Carousel */}
+                    {/* Offers */}
                     {aiOffers.length > 0 && (
                         <div style={{ marginBottom: '20px' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                                <h3 style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>Exclusive For You</h3>
-                                <div style={{ background: 'var(--color-accent)', color: 'black', fontSize: '0.6rem', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>AI POWERED</div>
+                                <h3 style={{ fontWeight: '900', fontSize: '1.1rem', letterSpacing: '-0.02em' }}>FOR YOU</h3>
+                                <div style={{ background: 'var(--color-accent)', color: 'black', fontSize: '0.6rem', padding: '3px 10px', borderRadius: '50px', fontWeight: '900' }}>AI ENGINE</div>
                             </div>
-                            <div style={{ display: 'flex', gap: '15px', overflowX: 'auto', paddingBottom: '10px' }}>
+                            <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '10px' }} className="no-scrollbar">
                                 {aiOffers.map((offer, i) => (
-                                    <div key={offer.id || i} style={{ minWidth: '240px', minHeight: '140px', background: '#1a1a1a', borderRadius: '24px', padding: '20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #333' }}>
+                                    <div key={offer.id || i} style={{ minWidth: '260px', minHeight: '160px', background: 'linear-gradient(135deg, #111 0%, #0a0a0a 100%)', borderRadius: '28px', padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', border: '1px solid #222' }}>
                                         <div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                                <div style={{ background: 'rgba(204,255,0,0.1)', padding: '8px', borderRadius: '12px' }}>
-                                                    <Zap size={16} color="var(--color-accent)" />
+                                                <div style={{ background: 'rgba(204,255,0,0.1)', padding: '10px', borderRadius: '12px' }}>
+                                                    <Zap size={18} color="var(--color-accent)" />
                                                 </div>
-                                                <div style={{ fontSize: '0.7rem', color: '#666' }}>{offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}</div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--color-accent)', fontWeight: '900', background: 'rgba(204,255,0,0.1)', padding: '4px 10px', borderRadius: '50px' }}>
+                                                    {offer.discountType === 'percentage' ? `${offer.discountValue}% OFF` : `₹${offer.discountValue} OFF`}
+                                                </div>
                                             </div>
-                                            <div style={{ fontWeight: 'bold', marginTop: '12px', fontSize: '1rem' }}>{offer.title}</div>
-                                            <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '4px' }}>{offer.description}</div>
+                                            <div style={{ fontWeight: '800', marginTop: '16px', fontSize: '1.1rem' }}>{offer.title}</div>
+                                            <div style={{ fontSize: '0.85rem', color: '#555', marginTop: '4px', lineHeight: '1.4' }}>{offer.description}</div>
                                         </div>
-                                        {offer.rewardItem && (
-                                            <button
-                                                onClick={() => {
-                                                    const product = products.find(p => p.name === offer.rewardItem);
-                                                    if (product) addToCart(product);
-                                                }}
-                                                className="btn-outline"
-                                                style={{ padding: '8px 12px', fontSize: '0.75rem', borderRadius: '12px', marginTop: '12px', width: 'fit-content' }}
-                                            >
-                                                Add {offer.rewardItem}
-                                            </button>
-                                        )}
                                     </div>
                                 ))}
                             </div>
                         </div>
                     )}
-
                 </div>
             )}
 
             {/* --- CART TAB --- */}
             {activeTab === 'cart' && (
-                <div className="animate-reveal" style={{ padding: '0 20px' }}>
-                    <h2 style={{ fontSize: '2rem', fontWeight: '800', marginBottom: '30px' }}>YOUR CART</h2>
+                <div className="animate-reveal" style={{ padding: '0 24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+                        <h2 style={{ fontSize: '2.5rem', fontWeight: '900', letterSpacing: '-0.05em' }}>CART</h2>
+                        {cart.length > 0 && <span style={{ color: '#444', fontWeight: '800' }}>{totalItems} UNITS</span>}
+                    </div>
 
                     {cart.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '60px 0', color: '#666' }}>
-                            <ShoppingCart size={40} style={{ margin: '0 auto 20px auto', opacity: 0.5 }} />
-                            <p>Cart is empty</p>
-                            <button onClick={() => { setActiveTab('home'); setIsScanning(true); }} className="btn-outline" style={{ marginTop: '20px', padding: '10px 20px', borderRadius: '50px' }}>Scan Items</button>
+                        <div style={{ textAlign: 'center', padding: '80px 0', color: '#444' }}>
+                            <div style={{ width: '80px', height: '80px', border: '2px dashed #222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+                                <ShoppingCart size={32} opacity={0.3} />
+                            </div>
+                            <p style={{ fontWeight: 'bold' }}>Your cart is empty</p>
+                            <button onClick={() => setIsScanning(true)} className="btn" style={{ marginTop: '30px', padding: '16px 32px', borderRadius: '50px' }}>Start Scanning</button>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                             {cart.map(item => (
-                                <div key={item.barcode} style={{ background: '#1a1a1a', borderRadius: '20px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <div style={{ fontSize: '2rem' }}>{item.image}</div>
+                                <div key={item.barcode} style={{ background: '#0a0a0a', borderRadius: '24px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #111' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                        <div style={{ fontSize: '2.5rem', background: '#111', width: '64px', height: '64px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.image}</div>
                                         <div>
-                                            <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-                                            <div style={{ fontSize: '0.9rem', color: 'var(--color-accent)' }}>₹{item.price}</div>
+                                            <div style={{ fontWeight: '800', fontSize: '1.1rem' }}>{item.name}</div>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--color-accent)', fontWeight: 'bold' }}>₹{item.price}</div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: '#000', padding: '5px 10px', borderRadius: '50px' }}>
-                                        <button onClick={() => item.qty > 1 ? updateQty(item.barcode, -1) : removeItem(item.barcode)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-                                            {item.qty === 1 ? <Trash2 size={16} color="#ff4444" /> : <Minus size={16} />}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#111', padding: '6px', borderRadius: '50px' }}>
+                                        <button onClick={() => item.qty > 1 ? updateQty(item.barcode, -1) : removeItem(item.barcode)} style={{ background: '#1a1a1a', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                            {item.qty === 1 ? <Trash2 size={14} color="#ff4444" /> : <Minus size={14} />}
                                         </button>
-                                        <span style={{ fontWeight: 'bold', minWidth: '20px', textAlign: 'center' }}>{item.qty}</span>
-                                        <button onClick={() => updateQty(item.barcode, 1)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}>
-                                            <Plus size={16} />
+                                        <span style={{ fontWeight: '900', minWidth: '24px', textAlign: 'center' }}>{item.qty}</span>
+                                        <button onClick={() => updateQty(item.barcode, 1)} style={{ background: '#1a1a1a', border: 'none', color: 'white', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                            <Plus size={14} />
                                         </button>
                                     </div>
                                 </div>
@@ -335,9 +511,9 @@ const ScannerPage = () => {
 
                             <div style={{ height: '40px' }}></div>
 
-                            <button onClick={() => navigate('/checkout')} className="btn" style={{ width: '100%', padding: '20px', borderRadius: '16px', fontSize: '1.1rem', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>CHECKOUT</span>
-                                <span>₹{total.toFixed(2)}</span>
+                            <button onClick={() => navigate('/checkout')} className="btn" style={{ width: '100%', padding: '24px', borderRadius: '24px', fontSize: '1.1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 20px 40px rgba(204,255,0,0.2)' }}>
+                                <span style={{ fontWeight: '900' }}>CHECKOUT</span>
+                                <span style={{ fontWeight: '900' }}>₹{total.toFixed(2)}</span>
                             </button>
                         </div>
                     )}
@@ -346,86 +522,103 @@ const ScannerPage = () => {
 
 
             {/* --- BOTTOM NAVIGATION --- */}
-            <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,10,10,0.95)', backdropFilter: 'blur(20px)', borderTop: '1px solid #222', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 50 }}>
-
-                {/* Home */}
-                <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', color: activeTab === 'home' ? 'var(--color-accent)' : '#666', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', cursor: 'pointer' }}>
-                    <Home size={24} />
-                    <span style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>HOME</span>
+            <div style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', background: 'rgba(10,10,10,0.9)', backdropFilter: 'blur(30px)', borderTop: '1px solid #111', padding: '20px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', zIndex: 50, height: '90px' }}>
+                <button onClick={() => setActiveTab('home')} style={{ background: 'none', border: 'none', color: activeTab === 'home' ? 'white' : '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', flex: 1 }}>
+                    <Home size={22} color={activeTab === 'home' ? 'var(--color-accent)' : '#444'} />
+                    <span style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '0.05em' }}>HOME</span>
                 </button>
 
-                {/* SCAN BUTTON (FAB) */}
-                <button
-                    onClick={() => setIsScanning(true)}
-                    style={{
-                        width: '70px',
-                        height: '70px',
-                        background: 'var(--color-accent)',
-                        borderRadius: '50%',
-                        border: '5px solid black',
-                        marginTop: '-50px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 10px 30px rgba(204,255,0,0.4)',
-                        cursor: 'pointer',
-                        transition: 'transform 0.2s',
-                        position: 'relative',
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-                    onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                >
-                    <ScanLine size={30} color="black" />
-                    {/* Ripple/Pulse effect */}
-                    <div style={{ position: 'absolute', inset: -5, borderRadius: '50%', border: '2px solid var(--color-accent)', opacity: 0.5, animation: 'pulse 2s infinite' }}></div>
-                </button>
-                <style>{`@keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }`}</style>
+                <div style={{ position: 'relative', flex: 1, display: 'flex', justifyContent: 'center' }}>
+                    <button
+                        onClick={() => setIsScanning(true)}
+                        style={{
+                            width: '76px',
+                            height: '76px',
+                            background: 'var(--color-accent)',
+                            borderRadius: '26px',
+                            border: '6px solid black',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 15px 35px rgba(204,255,0,0.4)',
+                            cursor: 'pointer',
+                            transform: 'translateY(-20px)',
+                            transition: '0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                        }}
+                    >
+                        <ScanLine size={32} color="black" />
+                    </button>
+                </div>
 
-                {/* Cart */}
-                <button onClick={() => setActiveTab('cart')} style={{ background: 'none', border: 'none', color: activeTab === 'cart' ? 'var(--color-accent)' : '#666', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', cursor: 'pointer', position: 'relative' }}>
-                    <ShoppingCart size={24} />
-                    {cart.length > 0 && <div style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'white', color: 'black', width: '18px', height: '18px', borderRadius: '50%', fontSize: '0.7rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cart.length}</div>}
-                    <span style={{ fontSize: '0.7rem', fontWeight: 'bold' }}>CART</span>
+                <button onClick={() => setActiveTab('cart')} style={{ background: 'none', border: 'none', color: activeTab === 'cart' ? 'white' : '#444', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer', flex: 1 }}>
+                    <div style={{ position: 'relative' }}>
+                        <ShoppingCart size={22} color={activeTab === 'cart' ? 'var(--color-accent)' : '#444'} />
+                        {cart.length > 0 && <div style={{ position: 'absolute', top: '-10px', right: '-10px', background: 'white', color: 'black', width: '18px', height: '18px', borderRadius: '50%', fontSize: '0.65rem', fontWeight: '900', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{cart.length}</div>}
+                    </div>
+                    <span style={{ fontSize: '0.65rem', fontWeight: '900', letterSpacing: '0.05em' }}>CART</span>
                 </button>
-
             </div>
 
-            {/* --- SCANNER OVERLAY --- */}
+            {/* --- CUSTOM SCANNER OVERLAY --- */}
             {isScanning && (
-                <div className="animate-reveal" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'black', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'black', display: 'flex', flexDirection: 'column' }}>
 
-                    {/* Header */}
-                    <div style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'absolute', top: 0, left: 0, width: '100%', zIndex: 10 }}>
-                        <div style={{ background: 'rgba(0,0,0,0.5)', padding: '5px 15px', borderRadius: '20px', color: 'white', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <div style={{ width: '8px', height: '8px', background: 'red', borderRadius: '50%', animation: 'blink 1s infinite' }}></div> LIVE
+                    {/* Header Controls */}
+                    <div style={{ padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'absolute', top: 0, width: '100%', zIndex: 10 }}>
+                        <div style={{ padding: '6px 16px', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(10px)', borderRadius: '50px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ width: '8px', height: '8px', background: 'red', borderRadius: '50%', animation: 'blink 1s infinite' }}></div>
+                            <span style={{ fontSize: '0.7rem', fontWeight: '900', color: 'white', letterSpacing: '0.1em' }}>SCANNING</span>
                         </div>
-                        <button onClick={() => setIsScanning(false)} style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(10px)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', cursor: 'pointer' }}>
-                            <X size={20} />
+                        <button onClick={() => setIsScanning(false)} style={{ width: '44px', height: '44px', background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+                            <X size={24} />
                         </button>
                     </div>
 
-                    {/* Camera */}
-                    <div style={{ flex: 1, position: 'relative' }}>
-                        <div id="reader" style={{ width: '100%', height: '100%', objectFit: 'cover' }}></div>
-                        {/* Custom Reticle */}
-                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <div style={{ width: '280px', height: '280px', border: '2px solid rgba(255,255,255,0.5)', borderRadius: '40px', position: 'relative' }}>
-                                <div style={{ position: 'absolute', top: '-2px', left: '-2px', width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderLeft: '4px solid var(--color-accent)', borderRadius: '6px 0 0 0' }}></div>
-                                <div style={{ position: 'absolute', top: '-2px', right: '-2px', width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderRight: '4px solid var(--color-accent)', borderRadius: '0 6px 0 0' }}></div>
-                                <div style={{ position: 'absolute', bottom: '-2px', left: '-2px', width: '40px', height: '40px', borderBottom: '4px solid var(--color-accent)', borderLeft: '4px solid var(--color-accent)', borderRadius: '0 0 0 6px' }}></div>
-                                <div style={{ position: 'absolute', bottom: '-2px', right: '-2px', width: '40px', height: '40px', borderBottom: '4px solid var(--color-accent)', borderRight: '4px solid var(--color-accent)', borderRadius: '0 0 6px 0' }}></div>
-                                <div style={{ position: 'absolute', top: '50%', width: '100%', height: '2px', background: 'red', opacity: 0.6, boxShadow: '0 0 10px red' }}></div>
+                    {/* Camera Viewport */}
+                    <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                        <div id="reader" style={{ width: '100%', height: '100%' }}></div>
+
+                        {/* Custom Reticle Overlay */}
+                        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
+                            <div style={{ position: 'relative', width: '280px', height: '280px' }}>
+                                {/* Corners */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderLeft: '4px solid var(--color-accent)', borderRadius: '12px 0 0 0' }}></div>
+                                <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderRight: '4px solid var(--color-accent)', borderRadius: '0 12px 0 0' }}></div>
+                                <div style={{ position: 'absolute', bottom: 0, left: 0, width: '40px', height: '40px', borderBottom: '4px solid var(--color-accent)', borderLeft: '4px solid var(--color-accent)', borderRadius: '0 0 0 12px' }}></div>
+                                <div style={{ position: 'absolute', bottom: 0, right: 0, width: '40px', height: '40px', borderBottom: '4px solid var(--color-accent)', borderRight: '4px solid var(--color-accent)', borderRadius: '0 0 12px 0' }}></div>
+
+                                {/* Animated Scan Line */}
+                                <div style={{ position: 'absolute', top: '50%', width: '100%', height: '2px', background: 'var(--color-accent)', boxShadow: '0 0 15px var(--color-accent)', animation: 'scannerLine 2s infinite ease-in-out' }}></div>
                             </div>
                         </div>
-                        <div style={{ position: 'absolute', bottom: '100px', width: '100%', textAlign: 'center', color: 'white', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}>
-                            Align code within frame
+
+                        {/* Hint Text */}
+                        <div style={{ position: 'absolute', bottom: '60px', width: '100%', textAlign: 'center' }}>
+                            <div style={{ display: 'inline-block', padding: '12px 24px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(10px)', borderRadius: '50px', fontSize: '0.9rem', fontWeight: 'bold', color: '#888' }}>
+                                ALIGN BARCODE WITHIN FRAME
+                            </div>
                         </div>
                     </div>
 
-                    <style>{`@keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }`}</style>
+                    <style>{`
+                        @keyframes scannerLine { 0% { top: 0%; opacity: 0; } 50% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+                        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+                        @keyframes pulse { 0% { transform: scale(1); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }
+                        .no-scrollbar::-webkit-scrollbar { display: none; }
+                        #reader video { object-fit: cover !important; width: 100% !important; height: 100% !important; }
+                        #reader__dashboard { display: none !important; }
+                        #reader__header { display: none !important; }
+                    `}</style>
                 </div>
             )}
 
+            {/* Version Stamp */}
+            <div style={{ position: 'fixed', bottom: '100px', right: '10px', fontSize: '8px', color: '#222', pointerEvents: 'none', zIndex: 10 }}>
+                BUILD V2.2.0-ELITE
+            </div>
+
+            {/* Manual Store Picker (Overlay) */}
+            {showStorePicker && renderStorePicker()}
         </div>
     );
 };

@@ -7,6 +7,7 @@ import SignupPage from './pages/SignupPage';
 import ScannerPage from './pages/ScannerPage';
 import CheckoutPage from './pages/CheckoutPage';
 import VerificationPage from './pages/VerificationPage';
+import PartnerDashboard from './pages/PartnerDashboard';
 
 import LegalPage from './pages/LegalPage';
 import ManifestoPage from './pages/ManifestoPage';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/verify" element={<VerificationPage />} />
           <Route path="/manifesto" element={<ManifestoPage />} />
           <Route path="/legal/:type" element={<LegalPage />} />
+          <Route path="/partner" element={<PartnerDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>

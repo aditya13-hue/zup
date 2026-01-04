@@ -10,7 +10,7 @@ const CheckoutPage = () => {
     const [billData, setBillData] = useState(null);
 
     useEffect(() => {
-        const savedCart = localStorage.getItem('zup_cart');
+        const savedCart = localStorage.getItem('zupp_cart');
         if (savedCart) {
             setCart(JSON.parse(savedCart));
         }
@@ -50,7 +50,7 @@ const CheckoutPage = () => {
                 key: order.key_id,
                 amount: order.amount,
                 currency: order.currency,
-                name: 'Zup',
+                name: 'Zupp',
                 description: 'Scan & Go Checkout',
                 order_id: order.id,
                 handler: async function (response) {
@@ -69,7 +69,7 @@ const CheckoutPage = () => {
 
                     if (verifyData.verified) {
                         const receipt = {
-                            id: `ZUP-${response.razorpay_payment_id.slice(-6)}`,
+                            id: `ZUPP-${response.razorpay_payment_id.slice(-6)}`,
                             total: total,
                             items: cart.length,
                             date: new Date().toISOString(),
@@ -79,15 +79,15 @@ const CheckoutPage = () => {
 
                         setBillData(JSON.stringify(receipt));
                         setPaymentStatus('completed');
-                        localStorage.removeItem('zup_cart');
+                        localStorage.removeItem('zupp_cart');
                     } else {
                         setPaymentStatus('idle');
                         alert('Payment verification failed');
                     }
                 },
                 prefill: {
-                    name: 'Zup Customer',
-                    email: 'customer@zup.com',
+                    name: 'Zupp Customer',
+                    email: 'customer@zupp.com',
                     contact: '9999999999'
                 },
                 theme: {
@@ -118,7 +118,7 @@ const CheckoutPage = () => {
                     <div style={{ color: '#22c55e', marginBottom: '1rem' }}>
                         <CheckCircle size={64} />
                     </div>
-                    <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Payment Success!</h2>
+                    <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', marginBottom: '0.5rem' }}>Payment Success!</h2>
                     <p style={{ color: 'var(--color-text-dim)', marginBottom: '2rem' }}>Please show this QR code at the exit.</p>
 
                     <div style={{ background: 'white', padding: '16px', borderRadius: '16px', marginBottom: '2rem' }}>

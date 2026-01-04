@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: zup-backend
+    name: zupp-backend
     env: docker
     plan: free
     region: ohio

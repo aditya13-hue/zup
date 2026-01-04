@@ -16,7 +16,7 @@ const ManifestoPage = () => {
             <nav style={{ padding: '24px 40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'fixed', width: '100%', top: 0, zIndex: 100, background: 'rgba(5,5,5,0.8)', backdropFilter: 'blur(10px)' }}>
                 <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Logo size={24} color="white" />
-                    <span style={{ fontWeight: '800' }}>ZUP.</span>
+                    <span style={{ fontWeight: '800' }}>ZUPP.</span>
                 </div>
                 <button onClick={() => navigate('/')} className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '0.9rem', padding: '10px 20px', borderRadius: '50px' }}>
                     <ArrowLeft size={16} /> Back
@@ -64,7 +64,7 @@ const ManifestoPage = () => {
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Technology Should Be Invisible</h3>
-                                <p>The best technology gets out of the way. You shouldn't have to learn how to use Zup. It should just work. Scan. Pay. Go. As natural as breathing.</p>
+                                <p>The best technology gets out of the way. You shouldn't have to learn how to use Zupp. It should just work. Scan. Pay. Go. As natural as breathing.</p>
                             </div>
                         </div>
 
@@ -74,7 +74,7 @@ const ManifestoPage = () => {
                             </div>
                             <div>
                                 <h3 style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'white', marginBottom: '10px' }}>Empowering Local Commerce</h3>
-                                <p>We're not here to replace the corner store. We're here to give them superpowers. Zup levels the playing field, allowing small businesses to offer the same seamless experience as tech giants.</p>
+                                <p>We're not here to replace the corner store. We're here to give them superpowers. Zupp levels the playing field, allowing small businesses to offer the same seamless experience as tech giants.</p>
                             </div>
                         </div>
 
@@ -82,9 +82,9 @@ const ManifestoPage = () => {
 
                     <div style={{ marginTop: '100px', padding: '60px', background: '#111', borderRadius: '30px', border: '1px solid #333', textAlign: 'center' }}>
                         <h2 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '20px', color: 'white' }}>JOIN THE MOVEMENT.</h2>
-                        <p style={{ marginBottom: '40px', fontSize: '1.1rem' }}>Be part of the future of retail. Whether you're a shopper or a shopkeeper, Zup is for you.</p>
+                        <p style={{ marginBottom: '40px', fontSize: '1.1rem' }}>Be part of the future of retail. Whether you're a shopper or a shopkeeper, Zupp is for you.</p>
                         <button onClick={() => navigate('/signup')} className="btn" style={{ padding: '20px 40px', fontSize: '1.1rem' }}>
-                            Create Zup Account
+                            Create Zupp Account
                         </button>
                     </div>
 

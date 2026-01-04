@@ -5,7 +5,7 @@ import { products } from './data/products.js';
 const stores = [
     {
         id: 'store-mumbai-1',
-        name: 'Zup Flagship - Mumbai',
+        name: 'Zupp Flagship - Mumbai',
         address: '123 MG Road, Mumbai, Maharashtra',
         lat: 19.0760,
         lng: 72.8777,
@@ -14,7 +14,7 @@ const stores = [
     },
     {
         id: 'store-delhi-1',
-        name: 'Zup Express - Delhi',
+        name: 'Zupp Express - Delhi',
         address: '456 Connaught Place, New Delhi',
         lat: 28.6139,
         lng: 77.2090,
@@ -23,7 +23,7 @@ const stores = [
     },
     {
         id: 'store-bangalore-1',
-        name: 'Zup Central - Bangalore',
+        name: 'Zupp Central - Bangalore',
         address: '789 MG Road, Bangalore, Karnataka',
         lat: 12.9716,
         lng: 77.5946,

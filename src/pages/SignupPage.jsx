@@ -45,13 +45,12 @@ const SignupPage = () => {
     };
 
     return (
-        <div className="split-layout">
-
-            {/* Left Section - Light Mode Editorial */}
-            <div style={{ background: 'var(--color-light)', padding: '60px', color: 'black', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+        <div className="auth-container">
+            {/* Left Section - Light Mode Editorial (Hidden on mobile) */}
+            <div className="auth-padding mobile-hide" style={{ background: 'var(--color-light)', color: 'black', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div onClick={() => navigate('/')} style={{ cursor: 'pointer', display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <Logo size={24} color="black" />
-                    <span style={{ fontWeight: '800' }}>ZUP.</span>
+                    <span style={{ fontWeight: '800' }}>ZUPP.</span>
                 </div>
 
                 <div>
@@ -68,13 +67,13 @@ const SignupPage = () => {
                         <Star fill="currentColor" />
                     </div>
                     <p style={{ maxWidth: '200px', fontSize: '0.85rem', fontWeight: '500' }}>
-                        Create a Zup ID to access 100+ automated stores worldwide.
+                        Create a Zupp ID to access 100+ automated stores worldwide.
                     </p>
                 </div>
             </div>
 
             {/* Right Section - Dark Mode Form */}
-            <div style={{ background: 'var(--color-bg)', padding: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="auth-padding" style={{ background: 'var(--color-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div className="animate-reveal" style={{
                     width: '100%',
                     maxWidth: '480px',
@@ -220,7 +219,7 @@ const SignupPage = () => {
 
                     <div style={{ marginTop: '3rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem' }}>
                         <p style={{ color: '#888', fontSize: '0.9rem' }}>
-                            Already a member? <span onClick={() => navigate('/login')} style={{ color: 'white', cursor: 'pointer', fontWeight: 'bold', marginLeft: '5px' }}>Sign In to Zup</span>
+                            Already a member? <span onClick={() => navigate('/login')} style={{ color: 'white', cursor: 'pointer', fontWeight: 'bold', marginLeft: '5px' }}>Sign In to Zupp</span>
                         </p>
                     </div>
                 </div>

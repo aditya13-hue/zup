@@ -8,6 +8,8 @@ import ScannerPage from './pages/ScannerPage';
 import CheckoutPage from './pages/CheckoutPage';
 import VerificationPage from './pages/VerificationPage';
 import PartnerDashboard from './pages/PartnerDashboard';
+import PartnerLoginPage from './pages/PartnerLoginPage';
+import PartnerRoute from './components/PartnerRoute';
 
 import LegalPage from './pages/LegalPage';
 import ManifestoPage from './pages/ManifestoPage';
@@ -27,7 +29,12 @@ function App() {
           <Route path="/verify" element={<VerificationPage />} />
           <Route path="/manifesto" element={<ManifestoPage />} />
           <Route path="/legal/:type" element={<LegalPage />} />
-          <Route path="/partner" element={<PartnerDashboard />} />
+          <Route path="/partner/login" element={<PartnerLoginPage />} />
+          <Route path="/partner" element={
+            <PartnerRoute>
+              <PartnerDashboard />
+            </PartnerRoute>
+          } />
         </Routes>
       </Router>
     </AuthProvider>

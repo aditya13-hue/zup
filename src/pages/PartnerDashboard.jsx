@@ -24,6 +24,11 @@ const PartnerDashboard = () => {
     const [analytics, setAnalytics] = useState({ totalRevenue: 0, totalOrders: 0, recentTransactions: [] });
     const [isVerifying, setIsVerifying] = useState(false);
     const [verificationResult, setVerificationResult] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [newProduct, setNewProduct] = useState({ name: '', price: '', barcode: '', image: '📦' });
+
+    const labelStyle = { fontSize: '0.7rem', fontWeight: 'bold', color: '#555', textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: '8px' };
+    const inputStyle = { width: '100%', background: '#0a0a0a', border: '1px solid #222', padding: '15px', borderRadius: '12px', color: 'white' };
 
     // Load Data
     useEffect(() => {
@@ -41,6 +46,40 @@ const PartnerDashboard = () => {
             setAnalytics(anaData);
         } catch (err) {
             console.error("Error loading partner data", err);
+        }
+    };
+
+    const handleSaveProduct = async (e) => {
+        e.preventDefault();
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/partner/inventory`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...newProduct,
+                    price: parseFloat(newProduct.price),
+                    qty: 100 // Default stock
+                })
+            });
+            if (res.ok) {
+                setIsModalOpen(false);
+                setNewProduct({ name: '', price: '', barcode: '', image: '📦' });
+                fetchData();
+            }
+        } catch (err) {
+            alert("Error saving product");
+        }
+    };
+
+    const handleDeleteProduct = async (barcode) => {
+        if (!window.confirm("Remove this product?")) return;
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/partner/inventory/${barcode}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) fetchData();
+        } catch (err) {
+            alert("Error deleting product");
         }
     };
 
@@ -138,7 +177,7 @@ const PartnerDashboard = () => {
                     <div className="animate-reveal">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
                             <h2 style={{ fontSize: '2rem', fontWeight: '900' }}>Inventory</h2>
-                            <button className="btn" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button onClick={() => setIsModalOpen(true)} className="btn" style={{ padding: '10px 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Plus size={18} /> Add Product
                             </button>
                         </div>
@@ -154,7 +193,7 @@ const PartnerDashboard = () => {
                                         <div style={{ fontSize: '0.8rem', color: '#555' }}>{item.barcode}</div>
                                         <div style={{ fontWeight: '900', color: 'var(--color-accent)', marginTop: '4px' }}>₹{item.price}</div>
                                     </div>
-                                    <button style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer' }}>
+                                    <button onClick={() => handleDeleteProduct(item.barcode)} style={{ background: 'none', border: 'none', color: '#ff4444', cursor: 'pointer' }}>
                                         <Trash2 size={18} />
                                     </button>
                                 </div>
@@ -224,6 +263,44 @@ const PartnerDashboard = () => {
                 )}
 
             </main>
+
+            {/* Add Product Modal */}
+            {isModalOpen && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(10px)' }}>
+                    <div className="glass" style={{ width: '90%', maxWidth: '500px', padding: '40px', borderRadius: '32px', position: 'relative' }}>
+                        <button onClick={() => setIsModalOpen(false)} style={{ position: 'absolute', top: '20px', right: '20px', background: 'none', border: 'none', color: '#555', cursor: 'pointer' }}>
+                            <XCircle size={24} />
+                        </button>
+
+                        <h2 style={{ fontWeight: '900', fontSize: '1.5rem', marginBottom: '30px' }}>Add New Product</h2>
+
+                        <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            <div>
+                                <label style={labelStyle}>Product Name</label>
+                                <input required style={inputStyle} value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="e.g. Coca Cola 500ml" />
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                                <div>
+                                    <label style={labelStyle}>Price (₹)</label>
+                                    <input required type="number" style={inputStyle} value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="40" />
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Emoji Icon</label>
+                                    <input style={inputStyle} value={newProduct.image} onChange={e => setNewProduct({ ...newProduct, image: e.target.value })} placeholder="🥤" />
+                                </div>
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Barcode Number</label>
+                                <input required style={inputStyle} value={newProduct.barcode} onChange={e => setNewProduct({ ...newProduct, barcode: e.target.value })} placeholder="890123..." />
+                            </div>
+
+                            <button type="submit" className="btn" style={{ marginTop: '20px', padding: '18px', borderRadius: '16px', fontWeight: 'bold' }}>
+                                SAVE TO INVENTORY
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             <style>{`
                 .glass { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); }

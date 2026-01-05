@@ -1,6 +1,7 @@
 import express from 'express';
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import { db } from '../db.js';
 
 const router = express.Router();
 
@@ -59,6 +60,17 @@ router.post('/create-order', async (req, res) => {
 
         const order = await razorpay.orders.create(orderOptions);
 
+        // Save Pending Transaction to DB
+        await db.collection('transactions').doc(order.id).set({
+            id: order.id,
+            amount: amountInPaise / 100,
+            currency: 'INR',
+            status: 'pending',
+            items: items, // Save items for analytics
+            date: new Date().toISOString(),
+            storeId: storeId || null
+        });
+
         res.json({
             id: order.id,
             amount: order.amount,
@@ -84,6 +96,13 @@ router.post('/verify-payment', async (req, res) => {
             .digest('hex');
 
         if (razorpay_signature === expectedSignature || !process.env.RAZORPAY_KEY_SECRET) {
+            // Update Transaction to PAID
+            await db.collection('transactions').doc(razorpay_order_id).set({
+                status: 'paid',
+                paymentId: razorpay_payment_id,
+                paidAt: new Date().toISOString()
+            }, { merge: true });
+
             res.json({ verified: true, payment_id: razorpay_payment_id });
         } else {
             res.status(400).json({ verified: false, message: 'Invalid signature' });

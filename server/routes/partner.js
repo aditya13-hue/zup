@@ -1,60 +1,83 @@
-import express from 'express';
+import { db } from '../db.js';
+
 const router = express.Router();
 
-// Mock Data for Demo
-let mockInventory = [
-    { barcode: '8901234567890', name: 'Fresh Milk 1L', price: 65, qty: 50, image: '🥛' },
-    { barcode: '8901234567891', name: 'Organic Bread', price: 45, qty: 30, image: '🍞' },
-    { barcode: '8901234567892', name: 'Dark Chocolate', price: 90, qty: 100, image: '🍫' }
-];
-
-let mockTransactions = [
-    { id: 'TX-1001', total: 110, date: '2026-01-04T10:00:00Z', items: 2 },
-    { id: 'TX-1002', total: 45, date: '2026-01-04T11:30:00Z', items: 1 },
-    { id: 'TX-1003', total: 200, date: '2026-01-04T14:15:00Z', items: 3 }
-];
+// Note: No more local mockInventory array. We use db.collection('products') instead.
 
 // --- INVENTORY ---
-router.get('/inventory', (req, res) => {
-    res.json(mockInventory);
-});
-
-router.post('/inventory', (req, res) => {
-    const product = req.body;
-    const index = mockInventory.findIndex(p => p.barcode === product.barcode);
-    if (index !== -1) {
-        mockInventory[index] = { ...mockInventory[index], ...product };
-    } else {
-        mockInventory.push(product);
+router.get('/inventory', async (req, res) => {
+    try {
+        const snapshot = await db.collection('products').get();
+        const products = snapshot.docs.map(doc => doc.data());
+        res.json(products);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
-    res.json({ message: 'Inventory updated successfully', product });
 });
 
-router.delete('/inventory/:barcode', (req, res) => {
-    mockInventory = mockInventory.filter(p => p.barcode !== req.params.barcode);
-    res.json({ message: 'Product removed' });
+router.post('/inventory', async (req, res) => {
+    const product = req.body;
+    try {
+        await db.collection('products').doc(product.barcode).set(product, { merge: true });
+        res.json({ message: 'Inventory updated in Firestore', product });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.delete('/inventory/:barcode', async (req, res) => {
+    try {
+        await db.collection('products').doc(req.params.barcode).delete();
+        res.json({ message: 'Product removed from Firestore' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // --- ANALYTICS ---
-router.get('/analytics', (req, res) => {
-    const totalRevenue = mockTransactions.reduce((acc, tx) => acc + tx.total, 0);
-    const totalOrders = mockTransactions.length;
-    res.json({
-        totalRevenue,
-        totalOrders,
-        recentTransactions: mockTransactions.slice(-5).reverse()
-    });
+router.get('/analytics', async (req, res) => {
+    try {
+        const snapshot = await db.collection('transactions').get();
+        const transactions = snapshot.docs.map(doc => doc.data());
+        const totalRevenue = transactions.reduce((acc, tx) => acc + (tx.total || 0), 0);
+        const totalOrders = transactions.length;
+
+        res.json({
+            totalRevenue,
+            totalOrders,
+            recentTransactions: transactions.slice(-5).reverse()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 // --- VERIFICATION ---
-router.post('/verify-receipt', (req, res) => {
+router.post('/verify-receipt', async (req, res) => {
     const { receiptId } = req.body;
-    // In real app, check against database of paid transactions
-    // For demo, we verify any ID that starts with ZUPP-
-    if (receiptId && receiptId.startsWith('ZUPP-')) {
-        res.json({ verified: true, message: 'Receipt Verified. Payment Confirmed.' });
-    } else {
-        res.status(400).json({ verified: false, message: 'Invalid or Unpaid Receipt.' });
+
+    try {
+        const doc = await db.collection('transactions').doc(receiptId).get();
+        if (!doc.exists) {
+            return res.status(404).json({ verified: false, message: 'Receipt Not Found.' });
+        }
+
+        const data = doc.data();
+        if (data.status === 'paid') {
+            res.json({
+                verified: true,
+                message: 'Payment Confirmed.',
+                details: {
+                    amount: data.amount,
+                    items: data.items.length,
+                    date: data.paidAt
+                }
+            });
+        } else {
+            res.status(400).json({ verified: false, message: 'Payment Pending or Failed.' });
+        }
+    } catch (error) {
+        res.status(500).json({ verified: false, message: 'Server Error' });
     }
 });
 

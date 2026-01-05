@@ -203,7 +203,30 @@ const LandingPage = () => {
 
 
 
-            {/* --- SECTION 4: FOOTER --- */}
+            {/* --- SECTION 4: PARTNER --- */}
+            <section id="partner" style={{ padding: '100px 0', background: '#fff', color: 'black' }}>
+                <div className="page-container">
+                    <div style={{ background: '#000', borderRadius: '40px', padding: '60px', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+                        {/* Background Decoration */}
+                        <div style={{ position: 'absolute', top: '-50%', left: '-20%', width: '500px', height: '500px', background: 'var(--color-accent)', filter: 'blur(150px)', opacity: 0.2 }}></div>
+
+                        <div style={{ zIndex: 2 }}>
+                            <div className="label-text" style={{ color: 'var(--color-accent)', marginBottom: '20px' }}>For Business</div>
+                            <h2 style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: '900', lineHeight: '1', marginBottom: '30px' }}>
+                                OWNER OF A MART?
+                            </h2>
+                            <p style={{ fontSize: '1.2rem', color: '#ccc', maxWidth: '600px', marginBottom: '40px', lineHeight: '1.6' }}>
+                                Transform your store into a tech-forward retail hub. Manage inventory, view real-time analytics, and verify customer payments—all from one dashboard.
+                            </p>
+                            <button onClick={() => navigate('/partner')} className="btn" style={{ padding: '20px 40px', background: 'var(--color-accent)', color: 'black', borderRadius: '50px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 20px 40px rgba(204,255,0,0.3)' }}>
+                                <Briefcase size={20} /> Access Partner Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* --- SECTION 5: FOOTER --- */}
             <footer style={{ background: '#0a0a0a', borderTop: '1px solid #222' }} className="section-pad">
                 <div className="page-container">
                     <div className="footer-grid">

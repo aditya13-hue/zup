@@ -8,7 +8,8 @@ const DEMO_PRODUCTS = [
     { barcode: '8901234500002', name: 'Lays Classic Salted', price: 20, qty: 30, image: '🥔' },
     { barcode: '8901234500003', name: 'Maggi Noodles', price: 14, qty: 100, image: '🍜' },
     { barcode: '8901234500004', name: 'Dairy Milk Silk', price: 80, qty: 25, image: '🍫' },
-    { barcode: '8901234500005', name: 'Colgate Totale', price: 95, qty: 40, image: '🦷' }
+    { barcode: '8901234500005', name: 'Colgate Totale', price: 95, qty: 40, image: '🦷' },
+    { barcode: '8908010900964', name: 'Peanut Butter', price: 300, qty: 15, image: '🥜' }
 ];
 
 // Get all products

@@ -46,12 +46,22 @@ const ScannerPage = () => {
 
     // Fetch Products from Backend
     const [products, setProducts] = useState([]);
+
+    const fetchProducts = async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/products`);
+            const data = await res.json();
+            setProducts(data);
+            return data;
+        } catch (err) {
+            console.error("Failed to fetch products", err);
+            return [];
+        }
+    };
+
     useEffect(() => {
-        fetch(`${import.meta.env.VITE_API_URL}/api/products`)
-            .then(res => res.json())
-            .then(data => setProducts(data))
-            .catch(err => console.error("Failed to fetch products", err));
-    }, []);
+        fetchProducts();
+    }, []); // Initial load
 
     // Location & Stores
     const { location, error: locationError, loading: locationLoading } = useGeolocation();
@@ -171,13 +181,26 @@ const ScannerPage = () => {
         };
     }, [isScanning, permissionGranted]);
 
-    const onScanSuccess = (decodedText) => {
-        const product = products.find(p => p.barcode === decodedText);
+    const onScanSuccess = async (decodedText) => {
+        // 1. Try to find in local stash
+        let product = products.find(p => p.barcode === decodedText);
+
+        // 2. If not found, force refresh from server
+        if (!product) {
+            console.log("Unknown barcode. Syncing with server...");
+            const freshProducts = await fetchProducts();
+            product = freshProducts.find(p => p.barcode === decodedText);
+        }
+
+        // 3. If found (either initially or after sync)
         if (product) {
             addToCart(product);
             setLastScanned(product);
             setIsScanning(false);
             if (navigator.vibrate) navigator.vibrate(200);
+        } else {
+            // Optional: Show "Product Not Found" toast/alert here if needed
+            console.log("Product definitely not found:", decodedText);
         }
     };
 

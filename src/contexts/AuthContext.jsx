@@ -6,7 +6,9 @@ import {
     GoogleAuthProvider,
     signOut,
     onAuthStateChanged,
-    sendPasswordResetEmail
+    sendPasswordResetEmail,
+    setPersistence,
+    browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '../firebase';
 
@@ -26,12 +28,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Login with email/password
-    const login = (email, password) => {
+    // Login with email/password
+    const login = async (email, password) => {
+        await setPersistence(auth, browserLocalPersistence);
         return signInWithEmailAndPassword(auth, email, password);
     };
 
     // Login with Google
-    const loginWithGoogle = () => {
+    // Login with Google
+    const loginWithGoogle = async () => {
+        await setPersistence(auth, browserLocalPersistence);
         const provider = new GoogleAuthProvider();
         return signInWithPopup(auth, provider);
     };

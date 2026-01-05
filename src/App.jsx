@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
@@ -29,12 +29,8 @@ function App() {
           <Route path="/verify" element={<VerificationPage />} />
           <Route path="/manifesto" element={<ManifestoPage />} />
           <Route path="/legal/:type" element={<LegalPage />} />
-          <Route path="/partner/login" element={<PartnerLoginPage />} />
-          <Route path="/partner" element={
-            <PartnerRoute>
-              <PartnerDashboard />
-            </PartnerRoute>
-          } />
+          <Route path="/partner/login" element={<Navigate to="/partner" replace />} />
+          <Route path="/partner" element={<PartnerDashboard />} />
         </Routes>
       </Router>
     </AuthProvider>

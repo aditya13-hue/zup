@@ -214,7 +214,7 @@ const LandingPage = () => {
                             </h2>
                             <button onClick={() => navigate('/signup')} className="btn" style={{ padding: '20px 40px', fontSize: '1rem' }}>Get Started</button>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '40px' }}>
                             <div>
                                 <div className="label-text" style={{ marginBottom: '20px', color: '#666' }}>Sitemap</div>
                                 <ul style={{ listStyle: 'none', lineHeight: '2.5', fontSize: '1.1rem', color: '#888' }}>
@@ -229,6 +229,12 @@ const LandingPage = () => {
                                 <ul style={{ listStyle: 'none', lineHeight: '2.5', fontSize: '1.1rem', color: '#888' }}>
                                     <li onClick={() => navigate('/legal/privacy')} style={{ cursor: 'pointer', transition: '0.3s' }} className="hover-text">Privacy Policy</li>
                                     <li onClick={() => navigate('/legal/terms')} style={{ cursor: 'pointer', transition: '0.3s' }} className="hover-text">Terms of Service</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div className="label-text" style={{ marginBottom: '20px', color: '#666' }}>Business</div>
+                                <ul style={{ listStyle: 'none', lineHeight: '2.5', fontSize: '1.1rem', color: '#888' }}>
+                                    <li onClick={() => navigate('/partner')} style={{ cursor: 'pointer', transition: '0.3s' }} className="hover-text">Partner Login</li>
                                 </ul>
                             </div>
                         </div>

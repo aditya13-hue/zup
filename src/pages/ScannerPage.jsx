@@ -27,6 +27,7 @@ const ScannerPage = () => {
     const [activeTab, setActiveTab] = useState('home'); // 'home', 'cart'
     const [isScanning, setIsScanning] = useState(false);
     const [permissionGranted, setPermissionGranted] = useState(false);
+    const [scannerError, setScannerError] = useState(null);
     const [lastScanned, setLastScanned] = useState(null);
     const [aiOffers, setAiOffers] = useState([]);
     const [showStorePicker, setShowStorePicker] = useState(false);
@@ -137,9 +138,12 @@ const ScannerPage = () => {
                     const html5QrCode = new Html5Qrcode("reader");
                     html5QrCodeRef.current = html5QrCode;
 
+                    // Explicitly request permission to trigger browser prompt if needed
+                    await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+
                     const config = {
                         fps: 20, // Increased FPS for smoother scanning
-                        qrbox: { width: 300, height: 200 }, // Rectangular box better for 1D barcodes
+                        qrbox: { width: 320, height: 150 }, // WIDER aspect ratio for long barcodes
                         aspectRatio: 1.0,
                         formatsToSupport: [
                             Html5QrcodeSupportedFormats.EAN_13,
@@ -165,7 +169,8 @@ const ScannerPage = () => {
                     );
                 } catch (err) {
                     console.error("Scanner start error", err);
-                    setIsScanning(false);
+                    setScannerError("Camera access failed. Please check permissions.");
+                    // Keep isScanning true to show the error UI
                 }
             };
 
@@ -614,11 +619,11 @@ const ScannerPage = () => {
 
                     {/* Camera Viewport */}
                     <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                        <div id="reader" style={{ width: '100%', height: '100%' }}></div>
+                        <div id="reader" style={{ width: '100%', height: '100%', minHeight: '100vh', background: 'black' }}></div>
 
                         {/* Custom Reticle Overlay */}
                         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.3)' }}>
-                            <div style={{ position: 'relative', width: '280px', height: '280px' }}>
+                            <div style={{ position: 'relative', width: '320px', height: '150px' }}>
                                 {/* Corners */}
                                 <div style={{ position: 'absolute', top: 0, left: 0, width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderLeft: '4px solid var(--color-accent)', borderRadius: '12px 0 0 0' }}></div>
                                 <div style={{ position: 'absolute', top: 0, right: 0, width: '40px', height: '40px', borderTop: '4px solid var(--color-accent)', borderRight: '4px solid var(--color-accent)', borderRadius: '0 12px 0 0' }}></div>
@@ -636,6 +641,24 @@ const ScannerPage = () => {
                                 ALIGN BARCODE WITHIN FRAME
                             </div>
                         </div>
+
+                        {/* Error Overlay */}
+                        {scannerError && (
+                            <div style={{ position: 'absolute', inset: 0, background: '#111', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+                                <div style={{ marginBottom: '20px', color: '#ff4444' }}><Camera size={48} /></div>
+                                <h3 style={{ color: 'white', fontWeight: 'bold', marginBottom: '10px' }}>CAMERA BLOCKED</h3>
+                                <p style={{ color: '#888', maxWidth: '250px', textAlign: 'center', marginBottom: '30px' }}>
+                                    {scannerError}
+                                </p>
+                                <button
+                                    onClick={() => { setScannerError(null); setIsScanning(false); }}
+                                    className="btn"
+                                    style={{ padding: '12px 24px', borderRadius: '50px' }}
+                                >
+                                    CLOSE & RETRY
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <style>{`

@@ -2,10 +2,19 @@ import React, { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Zap, Globe, Shield, Smartphone, Briefcase, ShoppingBag, Check, Scan, Percent, DoorOpen, Camera } from 'lucide-react';
 import Logo from '../components/Logo';
+import { useAuth } from '../contexts/AuthContext';
 
 const LandingPage = () => {
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
     const phoneRef = useRef(null);
+
+    // Auto-redirect if already logged in
+    useEffect(() => {
+        if (currentUser) {
+            navigate('/scanner');
+        }
+    }, [currentUser, navigate]);
 
     // Observer for "Text Reveal" and Scroll Sections
     useEffect(() => {
